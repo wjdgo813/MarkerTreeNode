@@ -3,6 +3,14 @@ var express = require('express');
 var router = express.Router();
 var db = require('./dbConn');
 var encode = require('urlencode');
+var driver = require('node-phantom-simple');
+var gm = require('gm');
+var async = require('async');
+
+var dir = __dirname + '/images/thumbs/'; 
+var url = "";
+var title = "";
+var thumbName = ((url.replace("http://", "")).replace("https://","")).replace(/[\/:*?"<>|]/g,"") + '.png';
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -12,7 +20,7 @@ router.get('/', function(req, res, next) {
 
 
 var sign_up_post = function (req, res) {
-    res.status(200);
+    res.status(200); // 좋지 않은 코드, 임시로 둠
     console.log(req.user_email);
     //해당 사용자에 북마크가 저장되어 있는지 확인
     db.pool.query('select * from TB_COMMENT where book_index = (select book_index from TB_BOOKMARK where book_url=:book_url and book_favorite =:book_favorite)'+
@@ -26,7 +34,7 @@ var sign_up_post = function (req, res) {
                         message:err
                     }
                 };
-                res.send(send);
+                res.json(send);
             }else{
                 if(result.rows[0] != undefined){
                     //사용자의 저장소에 이미 등록되어 있음
@@ -36,7 +44,7 @@ var sign_up_post = function (req, res) {
                             message:"이미 저장되어 있습니다."
                         }
                     };
-                    res.send(send);
+                    res.json(send);
                 }
                 else{
                     //등록되어 있지 않은 경우
@@ -93,10 +101,11 @@ var sign_up_post = function (req, res) {
                                 }
                                 else {
                                     //bookmark에 최초 등록
-                                    db.pool.query('INSERT INTO TB_BOOKMARK(BOOK_FAVORITE,BOOK_URL,BOOK_THUMB) VALUES(:book_favorite,:book_url,:book_thumb)',
+                                    db.pool.query('INSERT INTO TB_BOOKMARK(BOOK_FAVORITE,BOOK_URL,BOOK_NAME,BOOK_THUMB) VALUES(:book_favorite,:book_url,:book_name,:book_thumb)',
                                         {
                                             book_favorite: req.book_favorite,
                                             book_url: req.book_url,
+                                            book_name: req.book_name,
                                             book_thumb: req.book_thumb
                                         },
                                         function (err, result) {
@@ -162,25 +171,43 @@ var sign_up_post = function (req, res) {
 router.post('/', function (req, res, next) {
     console.log("receive post!!");
 
-
     req.user_email = req.body.user_email; //?ъ슜??email ?꾩뿉 session?쇰줈 諛쏆븘??
     req.book_favorite = req.body.book_favorite; // 痍⑦뼢 //null
+    url = req.body.book_url; // 스트링 작업을 위해 따로 저장
     req.book_url = req.body.book_url; //遺곷쭏??url
     //req.book_name = req.body.book_name; //遺곷쭏???대쫫
-    req.book_thumb = req.body.book_thumb; // 遺곷쭏???몃꽕??//null
+    
     req.com_comment =  req.body.com_comment; // ?볤?
     req.com_pros = req.body.com_pros; //?볤? 醫뗭븘???섎튌??
 
 
     req.book_favorite = encode.decode(req.book_favorite);
     req.com_comment = encode.decode(req.com_comment);
+    
+    // 타이틀, 썸네임 가져오는 작업
+    async.series([task1, task2], function(err, results) {
+        if( err ) {
+            console.log('Error : ', err);
+            var create_result = {
+                 success: 0,
+                 result: {
+                      message: err
+                 }
+            }
+            res.json(create_result);
+            return;
+        }
+        console.log('타이틀, 썸네일 가져오기 완료 ', results)
+    });
+
+    req.book_name = title;
+    req.book_thumb = 'images/thumbs/' + thumbName; // 저장된 썸네일 주소
 
 
-
-    if (req.book_favorite == undefined) { //null 泥섎━
+    if (req.book_favorite === undefined) { //null 泥섎━
         req.book_favorite = "";
     }
-    if (req.book_thumb == undefined) { //null 泥섎━
+    if (req.book_thumb === undefined) { //null 泥섎━
         req.book_thumb = "";
     }
 
@@ -188,5 +215,39 @@ router.post('/', function (req, res, next) {
     console.log("success post!!")
 }, sign_up_post);
 
+function task1(callback) { // title 및 썸네일 저장 작업
+    driver.create({ path: require('phantom').path }, function (err, browser) {
+        browser.createPage(function (err, page) {
+            page.open(url, function (err,status) {
+                console.log("opened site? ", status);
+                page.render(dir + thumbName);
+                page.evaluate(function () {
+                    return document.title;
+                }, function (err,result) {
+                    title = result;
+                    browser.exit();
+                    callback(null, 'task1 end');
+                });
+            });
+        });
+    });
+}
+
+function task2(callback) { // 썸네일 이미지 크기 조정 작업
+    //console.log("render 완료 : " + dir + thumbName);
+    gm(dir + thumbName)
+    .resize('200', '120', '^')
+    // .gravity('Center')
+    .crop('200', '120')
+    .write(dir + thumbName, function(err) {
+        if(err) {
+            console.error('Error : ' + err);
+        }
+        if(!err) {
+            console.log('resize completed : ' + dir + thumbName);
+            callback(null, 'task2 end');
+        }
+    });
+}
 
 module.exports = router;

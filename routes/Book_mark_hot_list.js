@@ -12,12 +12,14 @@ router.get('/', function(req, res, next) {
 router.post('/',function(req,res,next){
     var startIndex = req.body.startIndex;
     var endIndex = req.body.endIndex;
+    
+    var query = 
 
-    db.pool.query('select book_name,book_url,book_idx,cnt,ROWNUM,favorite'+
-    ' from (select A.book_name as book_name,A.book_url as book_url,B.book_idx as book_idx,A.book_favorite as favorite,B.cnt as cnt,@ROWNUM := @ROWNUM + 1 AS ROWNUM'+
-    ' from (SELECT @ROWNUM := 0) R ,TB_BOOKMARK A INNER JOIN (select cnt,book_idx'+
-    ' from (select count(book_index) as cnt,book_index as book_idx from (select * from TB_COMMENT where REGISTER_DATE >= DATE_SUB(SYSDATE(), INTERVAL 11 dAY)) as a'+
-    ' group by book_index order by cnt desc) a ) B on A.book_index = B.book_idx order by cnt desc) as z where ROWNUM>=:startIndex AND ROWNUM <=:endIndex'
+    db.pool.query('select book_thumb,book_name,book_url,book_idx,cnt,ROWNUM,favorite' +
+        ' from (select A.book_thumb,A.book_name as book_name,A.book_url as book_url,B.book_idx as book_idx,A.book_favorite as favorite,B.cnt as cnt,@ROWNUM := @ROWNUM + 1 AS ROWNUM' +
+        ' from (SELECT @ROWNUM := 0) R ,TB_BOOKMARK A INNER JOIN (select cnt,book_idx' +
+        ' from (select count(book_index) as cnt,book_index as book_idx from (select * from TB_COMMENT where REGISTER_DATE >= DATE_SUB(SYSDATE(), INTERVAL 11 dAY)) as a' +
+        ' group by book_index order by cnt desc) a ) B on A.book_index = B.book_idx order by cnt desc) as z where ROWNUM>=:startIndex AND ROWNUM <=:endIndex'
         ,{
                 startIndex : startIndex,
                 endIndex : endIndex
@@ -48,14 +50,15 @@ router.post('/',function(req,res,next){
                         }
                     }
                     console.log(result);
-                    res.send(result);
+                    res.json(result);
                 }
                 else{
                     var send = {
+                        success: 1,
                         item:item,
                         count:cntResult.rows[0].cnt
                     }
-                    res.send(send);
+                    res.json(send);
                     console.log(send);
                 }
             });
