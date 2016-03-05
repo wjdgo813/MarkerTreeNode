@@ -10,7 +10,7 @@ var async = require('async');
 var dir = __dirname + '/images/thumbs/'; 
 var url = "";
 var title = "";
-var thumbName = ((url.replace("http://", "")).replace("https://","")).replace(/[\/:*?"<>|]/g,"") + '.png';
+var thumbName = "";
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -174,6 +174,7 @@ router.post('/', function (req, res, next) {
     req.book_favorite = req.body.book_favorite; // 痍⑦뼢 //null
     url = req.body.book_url; // 스트링 작업을 위해 따로 저장
     req.book_url = req.body.book_url; //遺곷쭏??url
+    thumbName = ((url.replace("http://", "")).replace("https://","")).replace(/[\/:*?"<>|]/g,"") + '.png'
     //req.book_name = req.body.book_name; //遺곷쭏???대쫫
     
     req.com_comment =  req.body.com_comment; // ?볤?
@@ -196,21 +197,23 @@ router.post('/', function (req, res, next) {
             return;
         }
         console.log('타이틀, 썸네일 가져오기 완료! ', results)
+        
+        req.book_name = title;
+        req.book_thumb = 'images/thumbs/' + thumbName; // 저장된 썸네일 주소
+
+
+        if (req.book_favorite === undefined) { //null 泥섎━
+            req.book_favorite = "";
+        }
+        if (req.book_thumb === undefined) { //null 泥섎━
+            req.book_thumb = "";
+        }
+
+        next();
+        console.log("success post!!")
     });
 
-    req.book_name = title;
-    req.book_thumb = 'images/thumbs/' + thumbName; // 저장된 썸네일 주소
-
-
-    if (req.book_favorite === undefined) { //null 泥섎━
-        req.book_favorite = "";
-    }
-    if (req.book_thumb === undefined) { //null 泥섎━
-        req.book_thumb = "";
-    }
-
-    next();
-    console.log("success post!!")
+    
 }, sign_up_post);
 
 function task1(callback) { // title 및 썸네일 저장 작업
