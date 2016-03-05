@@ -195,7 +195,7 @@ router.post('/', function (req, res, next) {
             res.json(create_result);
             return;
         }
-        console.log('타이틀, 썸네일 가져오기 완료 ', results)
+        console.log('타이틀, 썸네일 가져오기 완료! ', results)
     });
 
     req.book_name = title;
