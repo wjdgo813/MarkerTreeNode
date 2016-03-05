@@ -24,7 +24,6 @@ router.post('/',function(req,res,next){
                 startIndex : startIndex,
                 endIndex : endIndex
         }
-
         , function (err,result) {
         if (err) {//error가 존재한다면
             var result = {

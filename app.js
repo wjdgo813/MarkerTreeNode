@@ -17,6 +17,7 @@ var book_mark_create = require('./routes/Book_mark_create');
 var book_mark_hot_list = require('./routes/Book_mark_hot_list');
 var book_mark_read = require('./routes/Book_mark_read');
 var imageRouter = require('./routes/imageRouter');
+var book_mark_my_list = require('./routes/Book_mark_my_list');
 
 var app = express();
 
@@ -50,6 +51,7 @@ app.use('/create',book_mark_create);
 app.use('/hot_list',book_mark_hot_list);
 app.use('/read',book_mark_read);
 app.use('/images',imageRouter);
+app.use('/my_list',book_mark_my_list);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

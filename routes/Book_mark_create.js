@@ -20,7 +20,6 @@ router.get('/', function(req, res, next) {
 
 
 var sign_up_post = function (req, res) {
-    res.status(200); // 좋지 않은 코드, 임시로 둠
     console.log(req.user_email);
     //해당 사용자에 북마크가 저장되어 있는지 확인
     db.pool.query('select * from TB_COMMENT where book_index = (select book_index from TB_BOOKMARK where book_url=:book_url and book_favorite =:book_favorite)'+
@@ -179,7 +178,6 @@ router.post('/', function (req, res, next) {
     
     req.com_comment =  req.body.com_comment; // ?볤?
     req.com_pros = req.body.com_pros; //?볤? 醫뗭븘???섎튌??
-
 
     req.book_favorite = encode.decode(req.book_favorite);
     req.com_comment = encode.decode(req.com_comment);
