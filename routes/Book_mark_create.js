@@ -237,9 +237,9 @@ function task1(callback) { // title 및 썸네일 저장 작업
 function task2(callback) { // 썸네일 이미지 크기 조정 작업
     //console.log("render 완료 : " + dir + thumbName);
     gm(dir + thumbName)
-    .resize('200', '120', '^')
-    // .gravity('Center')
-    .crop('200', '120')
+    .resize('400', '300', '^')
+    .gravity('North')
+    .crop('400', '300')
     .write(dir + thumbName, function(err) {
         if(err) {
             console.error('Error : ' + err);

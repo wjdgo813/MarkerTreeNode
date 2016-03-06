@@ -5,9 +5,9 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var crypto = require('crypto'); //암호화
-var flash = require("connect-flash");
 var session = require("express-session");
 var passport = require('passport');
+var FacebookTokenStrategy = require('passport-facebook-token');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -19,6 +19,8 @@ var book_mark_read = require('./routes/Book_mark_read');
 var imageRouter = require('./routes/imageRouter');
 var book_mark_my_list = require('./routes/Book_mark_my_list');
 var book_mark_read_favorite = require('./routes/Book_mark_read_favorite');
+var User = require('./user');
+var fbConfig = require('./fbConfig');
 
 var app = express();
 
@@ -34,15 +36,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(flash());
 app.use(session({
   secret: 'keyboard cat',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true }
+  saveUninitialized: true
 }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 app.use('/', routes);
 app.use('/users', users);
@@ -54,6 +55,53 @@ app.use('/read',book_mark_read);
 app.use('/images',imageRouter);
 app.use('/my_list',book_mark_my_list);
 app.use('/read_favorite',book_mark_read_favorite);
+
+
+passport.use('facebook-token', new FacebookTokenStrategy(
+   {
+      clientID: fbConfig.clientID,
+      clientSecret: fbConfig.clientSecret,
+      profileFields: ['id', 'displayName', 'photos', 'email'],
+   },
+   function (accessToken, refreshToken, profile, done) {
+      console.log('accessToken : ' + accessToken + " refreshToken : " + refreshToken);
+      console.log("profile : ", profile);
+      // 사용자 찾거나, 신규 등록    
+      User.findOrCreate(profile, accessToken, function (err, user) {
+         return done(err, user);
+      });
+   }
+   ));
+
+// 세션에 쓰기
+passport.serializeUser(function (user, done) {
+   console.log('serializeUser - user.id : ', user.id);
+   done(null, user.id);
+});
+
+// 세션에 기록된 정보 얻기
+passport.deserializeUser(function (id, done) {
+   var user = User.findOne(id);
+   console.log('deserializeUser', id, user);
+   done(null, user);
+});
+
+app.post('/auth/facebook/token', function (req, res, next) {
+   passport.authenticate('facebook-token', function (err, user, msg, status) {
+      if (err) {
+         return next(err);
+      }
+      
+      console.log('user : ', user, ' msg : ', msg, ' status : ', status);
+      req.logIn(user, function(err) {
+         if ( err ) {
+            console.error('Error', err);
+         }
+         res.status(200).send('Done');
+      });
+   })(req);
+});
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
