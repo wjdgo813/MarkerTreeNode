@@ -7,7 +7,7 @@ var driver = require('node-phantom-simple');
 var gm = require('gm');
 var async = require('async');
 
-var dir = __dirname + '/images/thumbs/'; 
+var dir = __dirname + '/images/thumbs/';
 var url = "";
 var title = "";
 var thumbName = "";
@@ -172,32 +172,35 @@ router.post('/', function (req, res, next) {
 
     req.user_email = req.body.user_email; //?ъ슜??email ?꾩뿉 session?쇰줈 諛쏆븘??
     req.book_favorite = req.body.book_favorite; // 痍⑦뼢 //null
-    url = req.body.book_url; // 스트링 작업을 위해 따로 저장
+
     req.book_url = req.body.book_url; //遺곷쭏??url
-    thumbName = ((url.replace("http://", "")).replace("https://","")).replace(/[\/:*?"<>|]/g,"") + '.png'
+    thumbName = ((url.replace("http://", "")).replace("https://","")).replace(/[\/:*?"<>|]/g,"") + '.png';
     //req.book_name = req.body.book_name; //遺곷쭏???대쫫
-    
+
+    req.book_url = encode.decode(req.book_url);
+    console.log("dddasdasdasd "+req.book_url);
+     url = req.book_url;
     req.com_comment =  req.body.com_comment; // ?볤?
     req.com_pros = req.body.com_pros; //?볤? 醫뗭븘???섎튌??
 
     req.book_favorite = encode.decode(req.book_favorite);
     req.com_comment = encode.decode(req.com_comment);
-    
+
     // 타이틀, 썸네임 가져오는 작업
     async.series([task1, task2], function(err, results) {
         if( err ) {
             console.log('Error : ', err);
             var create_result = {
-                 success: 0,
-                 result: {
-                      message: err
-                 }
+                success: 0,
+                result: {
+                    message: err
+                }
             }
             res.json(create_result);
             return;
         }
         console.log('타이틀, 썸네일 가져오기 완료! ', results)
-        
+
         req.book_name = title;
         req.book_thumb = 'images/thumbs/' + thumbName; // 저장된 썸네일 주소
 
@@ -213,7 +216,7 @@ router.post('/', function (req, res, next) {
         console.log("success post!!")
     });
 
-    
+
 }, sign_up_post);
 
 function task1(callback) { // title 및 썸네일 저장 작업
@@ -237,18 +240,18 @@ function task1(callback) { // title 및 썸네일 저장 작업
 function task2(callback) { // 썸네일 이미지 크기 조정 작업
     //console.log("render 완료 : " + dir + thumbName);
     gm(dir + thumbName)
-    .resize('400', '300', '^')
-    .gravity('North')
-    .crop('400', '300')
-    .write(dir + thumbName, function(err) {
-        if(err) {
-            console.error('Error : ' + err);
-        }
-        if(!err) {
-            console.log('resize completed : ' + dir + thumbName);
-            callback(null, 'task2 end');
-        }
-    });
+        .resize('200', '120', '^')
+        // .gravity('Center')
+        .crop('200', '120')
+        .write(dir + thumbName, function(err) {
+            if(err) {
+                console.error('Error : ' + err);
+            }
+            if(!err) {
+                console.log('resize completed : ' + dir + thumbName);
+                callback(null, 'task2 end');
+            }
+        });
 }
 
 module.exports = router;
